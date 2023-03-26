@@ -29,7 +29,7 @@ class loginPortal(FlaskForm):
         return wrapper
     
     def validate_userEmail(self, userEmail):
-        with DBCommands(app.config["DB_CONFIG"]) as cursor:
+        with DBCommands(app.config["MYSQL_HOST"],app.config["MYSQL_USER"], app.config["MYSQL_PASSWORD"], app.config["MYSQL_DB"], app.config["MYSQL_PORT"]) as cursor:
             cursor.execute("""SELECT email
                                 FROM userAccounts
                                 WHERE email=%s""", (str(userEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
@@ -68,7 +68,7 @@ def verify(token):
         flash("Invalid Confirmation Link!", "fail")
         return redirect(url_for("login"))
 
-    with DBCommands(app.config["DB_CONFIG"]) as cursor:
+    with DBCommands(app.config["MYSQL_HOST"],app.config["MYSQL_USER"], app.config["MYSQL_PASSWORD"], app.config["MYSQL_DB"], app.config["MYSQL_PORT"]) as cursor:
         cursor.execute("""SELECT verified
                             FROM userAccounts
                             WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
@@ -78,7 +78,7 @@ def verify(token):
         flash("Account is already confirmed. You may login.", "fail")
         return redirect(url_for("landing"))
     else:
-        with DBCommands(app.config["DB_CONFIG"]) as cursor:
+        with DBCommands(app.config["MYSQL_HOST"],app.config["MYSQL_USER"], app.config["MYSQL_PASSWORD"], app.config["MYSQL_DB"], app.config["MYSQL_PORT"]) as cursor:
             cursor.execute("""UPDATE userAccounts
                                 SET verified=True
                                 WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
