@@ -31,7 +31,7 @@ class RegisterForm(FlaskForm):
                                 WHERE email=%s""", (str(userEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
             result = cursor.fetchone()
 
-        if (result[0]):
+        if (result["email"]):
             raise StopValidation("Email already registered.")
         
     def sendConfirmation(self):
@@ -91,8 +91,11 @@ def login(title: str = "Logging in...") -> "html":
                                     WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
                 result = cursor.fetchone()
 
-            print(result)
-            if (result and flaskBcrypt.check_password_hash(result[1], str(loginForm.userLoginPassword.data))):
+            if (result):
+                print(loginForm.userLoginEmail.data, loginForm.userLoginPassword.data, result["password"])
+                print(flaskBcrypt.check_password_hash(result["password"], str(loginForm.userLoginPassword.data)))
+
+            if (result and flaskBcrypt.check_password_hash(result["password"], str(loginForm.userLoginPassword.data))):
                 session["logged_in"] = True
 
                 flash("Welcome back, " + str(loginForm.userLoginEmail.data).split("@")[0], "success")
@@ -130,7 +133,7 @@ def register(title: str = "Registering...") -> "html":
                 cursor.execute("""INSERT INTO userAccounts
                                 VALUES (%s, %s, %s)""", (str(userEmail).lower(), passwordHash, False))
                 
-            registerForm.sendConfirmation()
+            # registerForm.sendConfirmation()
                 
             flash("Submitted successfully, " + str(userEmail).split("@")[0] + ". Please check your email!", "success")
 
@@ -148,7 +151,7 @@ def register(title: str = "Registering...") -> "html":
     
     
 
-@app.route("/logout", methods=["GET", "POST"])
+@app.route("/logout", methods=["POST"])
 @isLogged
 def logout() -> str:
     session.pop("logged_in")
@@ -172,7 +175,7 @@ def verify(token):
                             WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
         result = cursor.fetchone()
 
-    if (result and result[2]):
+    if (result and result["verified"]):
         flash("Account is already confirmed. You may login.", "fail")
 
         return redirect(url_for("landing"))

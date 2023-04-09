@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block body %}
+
+{% with alerts = get_flashed_messages(with_categories=true) %}
+    {% if alerts %}
+        {% for category, alert in alerts%}
+            <div class="alert-{{ category }}">
+                {{ alert }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="user-portal">
+    <div class="user-column">
+        <h1>Login</h1><br>
+
+        <form class="user-form" method="post" action="{{ url_for('login') }}">
+            {{ loginForm.hidden_tag() }}
+            <span>
+                {{ loginForm.userLoginEmail.label }}
+                {{ loginForm.userLoginEmail }}
+            </span>
+
+            <span>
+                {{ loginForm.userLoginPassword.label }}
+                {{ loginForm.userLoginPassword }}
+            </span>
+
+            <span class="form-button">
+                {{ loginForm.login }}
+                <!-- <button name="login">Login</button> -->
+            </span>
+
+            <span>
+                {% for error in loginForm.userLoginEmail.errors %}
+                    {{ error }}
+                {% endfor %}
+
+                {% for error in loginForm.userLoginPassword.errors %}
+                    {{ error }}
+                {% endfor %}
+            </span>
+        </form>
+    </div>
+
+    <div class="user-column">
+        <h1>Register</h1><br>
+
+        <form class="user-form" method="post" action="{{ url_for('register') }}">
+            {{ registerForm.hidden_tag() }}
+            <span>
+                {{ registerForm.userRegisterEmail.label }}
+                {{ registerForm.userRegisterEmail }}
+            </span>
+
+            <span>
+                {{ registerForm.userRegisterPassword.label }}
+                {{ registerForm.userRegisterPassword }}
+            </span>
+
+            <span>
+                {{ registerForm.userPasswordVerify.label }}
+                {{ registerForm.userPasswordVerify }}
+            </span>
+
+            <span class="form-button">
+                {{ registerForm.register }}
+                <!-- <button name="register">Register</button> -->
+            </span>
+
+            <span>
+                {% for error in registerForm.userRegisterEmail.errors %}
+                    {{ error }}
+                {% endfor %}
+
+                {% for error in registerForm.userRegisterPassword.errors %}
+                    {{ error }}
+                {% endfor %}
+
+                {% for error in registerForm.userPasswordVerify.errors %}
+                {{ error }}
+            {% endfor %}
+            </span>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='user_portal.js') }}"></script>
+
+{% endblock %}
