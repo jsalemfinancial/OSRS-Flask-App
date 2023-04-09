@@ -6,10 +6,10 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, Email, ValidationError, EqualTo, StopValidation
+from wtforms.validators import DataRequired, Length, Email, EqualTo, StopValidation
 
-from flaskProj import app, session, flaskBcrypt
-from flaskProj.dbUtils import DBCommands, DBErrors
+from flaskProj import app, session
+from flaskProj.dbUtils import DBCommands
 
 #Login/Register UI Class
 
@@ -39,12 +39,12 @@ class RegisterForm(FlaskForm):
 
         confirmURL = url_for("verify", token=confirmSerial.dumps(self.userRegisterEmail.data, salt="saltsaltsalt"), _external=True)
 
-        html = render_template("email_verification.html", confirmationUrl=confirmURL)
+        html = render_template("auth/email_verification.html", confirmationUrl=confirmURL)
 
         emailThread = Thread(target=sendEmail, args=["Confirm Your Email with Joe's OSRS App", [self.userRegisterEmail.data], html])
         emailThread.start()
 
-# Verification Routes and Functions
+# Verification Functions
 
 def isLogged(function):
     @wraps(function)
@@ -64,139 +64,3 @@ def sendEmail(title: str, recipientList: list, htmlTemplate: "html") -> None:
 
         msg = Message(title, recipients=recipientList, html=htmlTemplate)
         mail.send(msg)
-
-@app.route("/userPortal", methods=["GET", "POST"])
-def userPortal(title: str = "User Portal") -> "html":
-    if ("logged_in" not in session):
-        loginForm = LoginForm()
-        registerForm = RegisterForm()
-
-        return render_template("user_portal.html", the_title = title, loginForm=loginForm, registerForm=registerForm)
-    
-    else:
-        flash("Already logged in!", "fail")
-
-        return redirect(url_for("landing"))
-
-@app.route("/login", methods=["GET", "POST"])
-def login(title: str = "Logging in...") -> "html":
-    try:
-        loginForm = LoginForm(formdata=request.form)
-        registerForm = RegisterForm()
-
-        if (loginForm.validate_on_submit()):
-            with DBCommands() as cursor:
-                cursor.execute("""SELECT *
-                                    FROM userAccounts
-                                    WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-                result = cursor.fetchone()
-
-            if (result):
-                print(loginForm.userLoginEmail.data, loginForm.userLoginPassword.data, result["password"])
-                print(flaskBcrypt.check_password_hash(result["password"], str(loginForm.userLoginPassword.data)))
-
-            if (result and flaskBcrypt.check_password_hash(result["password"], str(loginForm.userLoginPassword.data))):
-                session["logged_in"] = True
-
-                flash("Welcome back, " + str(loginForm.userLoginEmail.data).split("@")[0], "success")
-                return redirect(url_for("landing"))
-                
-    except DBErrors as error:
-        print("Caught Error!", error)
-
-        return "Error-Page TBA"
-    
-    flash("Login unsuccessful", "fail")
-    
-    return redirect(url_for("userPortal"))
-
-@app.route("/register", methods=["GET", "POST"])
-def register(title: str = "Registering...") -> "html":
-    try:
-        loginForm = LoginForm()
-        registerForm = RegisterForm(formdata=request.form)
-        
-        if (registerForm.validate_on_submit()):
-            with DBCommands() as cursor:
-                cursor.execute("""SELECT email
-                                FROM userAccounts
-                                WHERE email=%s""", (str(registerForm.userRegisterEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-                result = cursor.fetchone()
-
-            if (result):
-                raise ValidationError("Email is already registered.")
-
-            passwordHash = flaskBcrypt.generate_password_hash(str(registerForm.userRegisterPassword.data)).decode('utf-8')
-            userEmail = registerForm.userRegisterEmail.data
-
-            with DBCommands() as cursor:
-                cursor.execute("""INSERT INTO userAccounts
-                                VALUES (%s, %s, %s)""", (str(userEmail).lower(), passwordHash, False))
-                
-            # registerForm.sendConfirmation()
-                
-            flash("Submitted successfully, " + str(userEmail).split("@")[0] + ". Please check your email!", "success")
-
-            return redirect(url_for("landing"))
-        
-        return redirect(url_for("userPortal"))
-    
-    except DBErrors as error:
-        flash("DB Error: " + error, "fail")
-
-        return redirect(url_for("userPortal"))
-    except ValidationError as error:
-        flash(str(error), "fail")
-        return redirect(url_for("userPortal"))
-    
-    
-
-@app.route("/logout", methods=["POST"])
-@isLogged
-def logout() -> str:
-    session.pop("logged_in")
-
-    return "You are now logged out."
-
-@app.route("/verify/<token>")
-def verify(token):
-    try:
-        confirmSerial = URLSafeTimedSerializer(app.config["SECRET_KEY"])
-        userEmail = confirmSerial.loads(token, salt="saltsaltsalt", max_age=600)
-
-    except:
-        flash("Invalid Confirmation Link!", "fail")
-
-        return redirect(url_for("userPortal"))
-
-    with DBCommands() as cursor:
-        cursor.execute("""SELECT verified
-                            FROM userAccounts
-                            WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-        result = cursor.fetchone()
-
-    if (result and result["verified"]):
-        flash("Account is already confirmed. You may login.", "fail")
-
-        return redirect(url_for("landing"))
-    
-    else:
-        with DBCommands() as cursor:
-            cursor.execute("""UPDATE userAccounts
-                                SET verified=True
-                                WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-        flash("Account verified!", "success")
-            
-    return redirect(url_for("landing"))
-
-@app.route("/users", methods=["GET", "POST"])
-def users() -> str:
-    # with DBCommands() as cursor:
-    #     cursor.execute("""SELECT *
-    #                         FROM userAccounts""") #Extra ',' at end to tell python to unpack tuple.
-    #     result = cursor.fetchone()
-
-    testHash = flaskBcrypt.generate_password_hash("11111111").decode("utf-8")
-    print(flaskBcrypt.check_password_hash(testHash, "11111111"))
-    
-    return str("see console")

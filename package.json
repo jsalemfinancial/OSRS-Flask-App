@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"build": "webpack --config webpack.config.js --watch"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,8 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
+    "@types/react-dom": "^18.0.11",
+    "@types/react-router": "^5.1.20",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

@@ -8,4 +8,4 @@ app.config.from_object("config.Config")
 flaskBcrypt = Bcrypt(app)
 mysql = MySQL(app)
 
-from flaskProj import routes
+from flaskProj import views

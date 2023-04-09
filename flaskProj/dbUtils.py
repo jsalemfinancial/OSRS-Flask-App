@@ -2,17 +2,15 @@
 from MySQLdb import _exceptions
 from flaskProj import mysql
 
+from wtforms.validators import ValidationError
+
 class DBErrors(Exception):
     pass
 
-class DBCommands():
-    # def __init__(self, host, user, password, db, port) -> None:
-    #     self.host = host
-    #     self.user = user
-    #     self.password = password
-    #     self.db = db
-    #     self.port = port
+class ValidErrors(ValidationError):
+    pass
 
+class DBCommands():
     def __enter__(self) -> "cursor":
         try:
             self.cursor = mysql.connection.cursor()
