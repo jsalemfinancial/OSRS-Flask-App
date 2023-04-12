@@ -31,7 +31,7 @@ class RegisterForm(FlaskForm):
                                 WHERE email=%s""", (str(userEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
             result = cursor.fetchone()
 
-        if (result["email"]):
+        if (result[0]):
             raise StopValidation("Email already registered.")
         
     def sendConfirmation(self):
