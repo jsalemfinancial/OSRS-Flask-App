@@ -15,7 +15,6 @@ from flaskProj.dbUtils import DBCommands
 
 class LoginForm(FlaskForm):
     userLoginEmail = StringField("E-mail:", validators=[DataRequired("Please fill email."), Email(message="Invalid email.", check_deliverability=True)])
-    userLoginPassword = PasswordField("Password:", validators=[DataRequired("Please fill password."), Length(min=8, max=32)])
     login = SubmitField("Login")
 
 class RegisterForm(FlaskForm):

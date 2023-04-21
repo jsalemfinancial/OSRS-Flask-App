@@ -1,4 +1,4 @@
-from flask import request, render_template, redirect, url_for, flash
+from flask import Response, request, render_template, redirect, url_for, flash, jsonify
 
 from flaskProj import app, session, flaskBcrypt
 from flaskProj.loginUtils import LoginForm, RegisterForm, isLogged
@@ -7,91 +7,106 @@ from flaskProj.dbUtils import DBCommands, DBErrors, ValidErrors
 from itsdangerous import URLSafeTimedSerializer
 
 
-@app.route("/", methods=["GET", "POST"])
-def index(title: str = "Joe's Web App") -> "html":
+@app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route('/<path:path>')
+def index(path, title: str = "Joe's Web App") -> "html":
+    response = Response("index_page")
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
     clientAddress = request.environ.get("REMOTE_ADDR")
     serverAddress = request.environ.get("SERVER_NAME")
     requestHost = request.environ.get("HTTP_HOST")
     
+    if (path != ""):
+        return redirect(url_for("index"))
+
     return render_template("index.html", the_title = title,
                                             the_client_address = clientAddress, 
                                             the_server_address = serverAddress, 
-                                            the_host = requestHost)
+                                            the_host = requestHost, loginForm = LoginForm())
 
-@app.route("/userpage", methods=["GET", "POST"])
-@isLogged
-def userPage() -> str:
-    return "This is a logged-in user page!"
+@app.route('/data')
+def data():
+    data = {"name": "Joe", "pronouns": str(flaskBcrypt.generate_password_hash("24"))}
 
-@app.route("/userPortal", methods=["GET", "POST"])
-def userPortal(title: str = "User Portal") -> "html":
-    if ("logged_in" not in session):
-        loginForm = LoginForm()
-        registerForm = RegisterForm()
+    return jsonify(data)
 
-        return render_template("auth/user_portal.html", the_title = title, loginForm=loginForm, registerForm=registerForm)
+# @app.route("/userpage", methods=["GET", "POST"])
+# @isLogged
+# def userPage() -> str:
+#     return "This is a logged-in user page!"
+
+# @app.route("/userPortal", methods=["GET", "POST"])
+# def userPortal(title: str = "User Portal") -> "html":
+#     if ("logged_in" not in session):
+#         loginForm = LoginForm()
+#         registerForm = RegisterForm()
+
+#         return render_template("auth/user_portal.html", the_title = title, loginForm=loginForm, registerForm=registerForm)
     
-    else:
-        flash("Already logged in!", "fail")
+#     else:
+#         flash("Already logged in!", "fail")
 
-        return redirect(url_for("index"))
+#         return redirect(url_for("index"))
 
 @app.route("/login", methods=["GET", "POST"])
-def login(title: str = "Logging in...") -> "html":
+def login() -> "html":
     loginForm = LoginForm(formdata=request.form)
 
     if (loginForm.validate_on_submit()):
-        with DBCommands() as cursor:
-            cursor.execute("""SELECT *
-                                FROM userAccounts
-                                WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-            result = cursor.fetchone()
+        # with DBCommands() as cursor:
+        #     cursor.execute("""SELECT *
+        #                         FROM userAccounts
+        #                         WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
+        #     result = cursor.fetchone()
 
-        if (result and flaskBcrypt.check_password_hash(result[1], str(loginForm.userLoginPassword.data))):
+        if (loginForm.userLoginEmail.data == "jamal@gmail.com"):
             session["logged_in"] = True
 
             flash("Welcome back, " + str(loginForm.userLoginEmail.data).split("@")[0], "success")
+            print("Login Success!")
             return redirect(url_for("index"))
     
     flash("Login unsuccessful", "fail")
+    print("Login Fail!")
+
+    return redirect(url_for("index"))
+
+# @app.route("/register", methods=["GET", "POST"])
+# def register(title: str = "Registering...") -> "html":
+#     registerForm = RegisterForm(formdata=request.form)
     
-    return redirect(url_for("userPortal"))
+#     if (registerForm.validate_on_submit()):
+#         with DBCommands() as cursor:
+#             cursor.execute("""SELECT email
+#                             FROM userAccounts
+#                             WHERE email=%s""", (str(registerForm.userRegisterEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
+#             result = cursor.fetchone()
 
-@app.route("/register", methods=["GET", "POST"])
-def register(title: str = "Registering...") -> "html":
-    registerForm = RegisterForm(formdata=request.form)
-    
-    if (registerForm.validate_on_submit()):
-        with DBCommands() as cursor:
-            cursor.execute("""SELECT email
-                            FROM userAccounts
-                            WHERE email=%s""", (str(registerForm.userRegisterEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-            result = cursor.fetchone()
+#         if (result):
+#             raise ValidErrors("Email is already registered.")
 
-        if (result):
-            raise ValidErrors("Email is already registered.")
+#         passwordHash = flaskBcrypt.generate_password_hash(str(registerForm.userRegisterPassword.data)).decode('utf-8')
+#         userEmail = registerForm.userRegisterEmail.data
 
-        passwordHash = flaskBcrypt.generate_password_hash(str(registerForm.userRegisterPassword.data)).decode('utf-8')
-        userEmail = registerForm.userRegisterEmail.data
-
-        with DBCommands() as cursor:
-            cursor.execute("""INSERT INTO userAccounts
-                            VALUES (%s, %s, %s)""", (str(userEmail).lower(), passwordHash, False))
+#         with DBCommands() as cursor:
+#             cursor.execute("""INSERT INTO userAccounts
+#                             VALUES (%s, %s, %s)""", (str(userEmail).lower(), passwordHash, False))
             
-        registerForm.sendConfirmation()
+#         registerForm.sendConfirmation()
             
-        flash("Submitted successfully, " + str(userEmail).split("@")[0] + ". Please check your email!", "success")
+#         flash("Submitted successfully, " + str(userEmail).split("@")[0] + ". Please check your email!", "success")
 
-        return redirect(url_for("index"))
+#         return redirect(url_for("index"))
     
-    return redirect(url_for("userPortal"))
+#     return redirect(url_for("userPortal"))
     
-@app.route("/logout", methods=["GET", "POST"])
-@isLogged
-def logout() -> str:
-    session.pop("logged_in")
+# @app.route("/logout", methods=["GET", "POST"])
+# @isLogged
+# def logout() -> str:
+#     session.pop("logged_in")
 
-    return "You are now logged out."
+#     return "You are now logged out."
 
 @app.route("/verify/<token>")
 def verify(token):
