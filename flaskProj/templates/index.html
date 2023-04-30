@@ -19,9 +19,6 @@
 
 <div class="landing-welcome">    
     <h1>Welcome!</h1><br>
-    <span>From: {{the_client_address}}</span><br>
-    <span>To: {{the_server_address}}</span><br>
-    <span>Host: {{the_host}}</span><br>
     <span id="data-placeholder"></span>
     <span id="sample-component"></span>
 </div>
@@ -29,7 +26,7 @@
 <div class="user-column">
     <h1>Login</h1><br>
 
-    <form class="user-form" method="post" action="{{ url_for('login') }}">
+    <form class="user-form" method="post" action="{{ url_for('authentication') }}">
         {{ loginForm.hidden_tag() }}
         <span>
             {{ loginForm.userLoginEmail.label }}

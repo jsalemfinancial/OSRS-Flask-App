@@ -9,21 +9,14 @@ from itsdangerous import URLSafeTimedSerializer
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
 @app.route('/<path:path>')
-def index(path, title: str = "Joe's Web App") -> "html":
+def index(path, title: str = "OSRS Charting App") -> "html":
     response = Response("index_page")
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
-
-    clientAddress = request.environ.get("REMOTE_ADDR")
-    serverAddress = request.environ.get("SERVER_NAME")
-    requestHost = request.environ.get("HTTP_HOST")
     
     if (path != ""):
         return redirect(url_for("index"))
 
-    return render_template("index.html", the_title = title,
-                                            the_client_address = clientAddress, 
-                                            the_server_address = serverAddress, 
-                                            the_host = requestHost, loginForm = LoginForm())
+    return render_template("index.html", the_title = title, loginForm = LoginForm())
 
 @app.route('/data')
 def data():
@@ -31,36 +24,18 @@ def data():
 
     return jsonify(data)
 
-# @app.route("/userpage", methods=["GET", "POST"])
-# @isLogged
-# def userPage() -> str:
-#     return "This is a logged-in user page!"
-
-# @app.route("/userPortal", methods=["GET", "POST"])
-# def userPortal(title: str = "User Portal") -> "html":
-#     if ("logged_in" not in session):
-#         loginForm = LoginForm()
-#         registerForm = RegisterForm()
-
-#         return render_template("auth/user_portal.html", the_title = title, loginForm=loginForm, registerForm=registerForm)
-    
-#     else:
-#         flash("Already logged in!", "fail")
-
-#         return redirect(url_for("index"))
-
-@app.route("/login", methods=["GET", "POST"])
-def login() -> "html":
+@app.route("/authentication", methods=["GET", "POST"])
+def authentication() -> "html":
     loginForm = LoginForm(formdata=request.form)
 
     if (loginForm.validate_on_submit()):
-        # with DBCommands() as cursor:
-        #     cursor.execute("""SELECT *
-        #                         FROM userAccounts
-        #                         WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-        #     result = cursor.fetchone()
+        with DBCommands() as cursor:
+            cursor.execute("""SELECT *
+                                FROM jhsalem$user-details
+                                WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
+            result = cursor.fetchone()
 
-        if (loginForm.userLoginEmail.data == "jamal@gmail.com"):
+        if (result):
             session["logged_in"] = True
 
             flash("Welcome back, " + str(loginForm.userLoginEmail.data).split("@")[0], "success")
@@ -71,42 +46,6 @@ def login() -> "html":
     print("Login Fail!")
 
     return redirect(url_for("index"))
-
-# @app.route("/register", methods=["GET", "POST"])
-# def register(title: str = "Registering...") -> "html":
-#     registerForm = RegisterForm(formdata=request.form)
-    
-#     if (registerForm.validate_on_submit()):
-#         with DBCommands() as cursor:
-#             cursor.execute("""SELECT email
-#                             FROM userAccounts
-#                             WHERE email=%s""", (str(registerForm.userRegisterEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-#             result = cursor.fetchone()
-
-#         if (result):
-#             raise ValidErrors("Email is already registered.")
-
-#         passwordHash = flaskBcrypt.generate_password_hash(str(registerForm.userRegisterPassword.data)).decode('utf-8')
-#         userEmail = registerForm.userRegisterEmail.data
-
-#         with DBCommands() as cursor:
-#             cursor.execute("""INSERT INTO userAccounts
-#                             VALUES (%s, %s, %s)""", (str(userEmail).lower(), passwordHash, False))
-            
-#         registerForm.sendConfirmation()
-            
-#         flash("Submitted successfully, " + str(userEmail).split("@")[0] + ". Please check your email!", "success")
-
-#         return redirect(url_for("index"))
-    
-#     return redirect(url_for("userPortal"))
-    
-# @app.route("/logout", methods=["GET", "POST"])
-# @isLogged
-# def logout() -> str:
-#     session.pop("logged_in")
-
-#     return "You are now logged out."
 
 @app.route("/verify/<token>")
 def verify(token):
