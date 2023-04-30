@@ -31,7 +31,7 @@ def authentication() -> "html":
     if (loginForm.validate_on_submit()):
         with DBCommands() as cursor:
             cursor.execute("""SELECT *
-                                FROM jhsalem$user-details
+                                FROM users
                                 WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
             result = cursor.fetchone()
 
