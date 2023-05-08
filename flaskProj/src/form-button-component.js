@@ -20,7 +20,9 @@ class LoginRegister extends React.Component {
   }
 
   handleClick() {
-    fetch('/data')
+    const accessToken = sessionStorage.getItem('access_token');
+    
+    fetch('/data', {headers: {"Authorization": "Bearer ${accesstoken}"}})
         .then(response => response.json())
         .then(data => this.setState({ data }));
   }

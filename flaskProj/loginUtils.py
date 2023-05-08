@@ -32,16 +32,6 @@ class RegisterForm(FlaskForm):
 
         if (result[0]):
             raise StopValidation("Email already registered.")
-        
-    def sendConfirmation(self):
-        confirmSerial = URLSafeTimedSerializer(app.config["SECRET_KEY"])
-
-        confirmURL = url_for("verify", token=confirmSerial.dumps(self.userRegisterEmail.data, salt="saltsaltsalt"), _external=True)
-
-        html = render_template("auth/email_verification.html", confirmationUrl=confirmURL)
-
-        emailThread = Thread(target=sendEmail, args=["Confirm Your Email with Joe's OSRS App", [self.userRegisterEmail.data], html])
-        emailThread.start()
 
 # Verification Functions
 
@@ -55,6 +45,14 @@ def isLogged(function):
         return redirect(url_for("userPortal"))
     
     return wrapper
+
+def sendConfirmation(tokenData, userEmail):
+    confirmURL = url_for("index", token=tokenData, _external=True)
+
+    html = render_template("auth/email_verification.html", confirmationUrl=confirmURL)
+
+    emailThread = Thread(target=sendEmail, args=["Confirm Your Email with Joe's OSRS App", [userEmail], html])
+    emailThread.start()
 
 def sendEmail(title: str, recipientList: list, htmlTemplate: "html") -> None:
     with app.app_context():

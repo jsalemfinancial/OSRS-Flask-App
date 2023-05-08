@@ -1,10 +1,13 @@
+from threading import Thread
+from itsdangerous import URLSafeTimedSerializer
+
 from flask import Response, request, render_template, redirect, url_for, flash, jsonify
 
 from flaskProj import app, session, flaskBcrypt
-from flaskProj.loginUtils import LoginForm, RegisterForm, isLogged
+from flaskProj.loginUtils import LoginForm, sendEmail, sendConfirmation
 from flaskProj.dbUtils import DBCommands, DBErrors, ValidErrors
 
-from itsdangerous import URLSafeTimedSerializer
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
@@ -18,9 +21,10 @@ def index(path, title: str = "OSRS Charting App") -> "html":
 
     return render_template("index.html", the_title = title, loginForm = LoginForm())
 
-@app.route('/data')
+@app.route('/data', methods=["GET", "POST"])
+@jwt_required()
 def data():
-    data = {"name": "Joe", "pronouns": str(flaskBcrypt.generate_password_hash("24"))}
+    data = {"name": get_jwt_identity(), "pronouns": str(flaskBcrypt.generate_password_hash("24"))}
 
     return jsonify(data)
 
@@ -29,17 +33,20 @@ def authentication() -> "html":
     loginForm = LoginForm(formdata=request.form)
 
     if (loginForm.validate_on_submit()):
-        with DBCommands() as cursor:
-            cursor.execute("""SELECT *
-                                FROM users
-                                WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-            result = cursor.fetchone()
+        # with DBCommands() as cursor:
+        #     cursor.execute("""SELECT *
+        #                         FROM users
+        #                         WHERE email=%s""", (str(loginForm.userLoginEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
+        #     result = cursor.fetchone()
+
+        result = True
 
         if (result):
-            session["logged_in"] = True
+            accessToken = create_access_token(identity=loginForm.userLoginEmail.data)
+            print(accessToken)
 
-            flash("Welcome back, " + str(loginForm.userLoginEmail.data).split("@")[0], "success")
-            print("Login Success!")
+            sendConfirmation(accessToken, loginForm.userLoginEmail.data)
+            flash("Check your Email " + str(loginForm.userLoginEmail.data).split("@")[0] + "!", "success")
             return redirect(url_for("index"))
     
     flash("Login unsuccessful", "fail")
