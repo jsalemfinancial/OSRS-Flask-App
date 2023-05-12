@@ -1,12 +1,11 @@
 from functools import wraps
 from threading import Thread
 
-from flask import redirect, url_for, render_template, flash, request
+from flask import url_for, render_template, jsonify
 from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, StopValidation
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired, Length, Email
 
 from flaskProj import app, session
 from flaskProj.dbUtils import DBCommands
@@ -14,45 +13,18 @@ from flaskProj.dbUtils import DBCommands
 #Login/Register UI Class
 
 class LoginForm(FlaskForm):
-    userLoginEmail = StringField("E-mail:", validators=[DataRequired("Please fill email."), Email(message="Invalid email.", check_deliverability=True)])
+    userLoginEmail = StringField("E-mail:", validators=[Length(max=128, message="Email too long."), DataRequired(message="Field empty."), Email(message="Invalid email.", check_deliverability=True)])
     login = SubmitField("Login")
-
-class RegisterForm(FlaskForm):
-    userRegisterEmail = StringField("E-mail:", validators=[DataRequired("Please fill email."), Email(message="Invalid email.", check_deliverability=True)])
-    userRegisterPassword = PasswordField("Password:", validators=[DataRequired("Please fill password."), Length(min=8, max=32)])
-    userPasswordVerify = PasswordField("Verify Password:", validators=[DataRequired(), EqualTo("userRegisterPassword", message="Password does not match.")])
-    register = SubmitField("Register Account")
-    
-    def validate_userRegistered(self, userEmail):
-        with DBCommands() as cursor:
-            cursor.execute("""SELECT email
-                                FROM userAccounts
-                                WHERE email=%s""", (str(userEmail.data).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-            result = cursor.fetchone()
-
-        if (result[0]):
-            raise StopValidation("Email already registered.")
-
-# Verification Functions
 
 def isLogged(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if ("logged_in") in session:
-            return function(*args, **kwargs)
-        
-        flash("Please Login", "fail")
-        return redirect(url_for("userPortal"))
+        if "logged_in" not in session:
+            return jsonify({"response": "Please login!"})
+
+        return function(*args, **kwargs)
     
     return wrapper
-
-def sendConfirmation(tokenData, userEmail):
-    confirmURL = url_for("index", token=tokenData, _external=True)
-
-    html = render_template("auth/email_verification.html", confirmationUrl=confirmURL)
-
-    emailThread = Thread(target=sendEmail, args=["Confirm Your Email with Joe's OSRS App", [userEmail], html])
-    emailThread.start()
 
 def sendEmail(title: str, recipientList: list, htmlTemplate: "html") -> None:
     with app.app_context():
@@ -61,3 +33,11 @@ def sendEmail(title: str, recipientList: list, htmlTemplate: "html") -> None:
 
         msg = Message(title, recipients=recipientList, html=htmlTemplate)
         mail.send(msg)
+
+def sendConfirmation(tokenData, userEmail):
+    confirmURL = url_for("verify", token=tokenData, _external=True)
+
+    html = render_template("auth/email_verification.html", confirmationUrl=confirmURL)
+
+    emailThread = Thread(target=sendEmail, args=[app.config["MAIL_CONFIRMATION_TITLE"], [userEmail], html])
+    emailThread.start()

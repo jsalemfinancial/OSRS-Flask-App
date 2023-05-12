@@ -1,13 +1,10 @@
-from threading import Thread
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import SignatureExpired, BadTimeSignature
 
 from flask import Response, request, render_template, redirect, url_for, flash, jsonify
 
-from flaskProj import app, session, flaskBcrypt
-from flaskProj.loginUtils import LoginForm, sendEmail, sendConfirmation
+from flaskProj import app, session, serializer
+from flaskProj.loginUtils import LoginForm, sendConfirmation, isLogged
 from flaskProj.dbUtils import DBCommands, DBErrors, ValidErrors
-
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
@@ -15,6 +12,8 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 def index(path, title: str = "OSRS Charting App") -> "html":
     response = Response("index_page")
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    print(session)
     
     if (path != ""):
         return redirect(url_for("index"))
@@ -22,9 +21,9 @@ def index(path, title: str = "OSRS Charting App") -> "html":
     return render_template("index.html", the_title = title, loginForm = LoginForm())
 
 @app.route('/data', methods=["GET", "POST"])
-@jwt_required()
+@isLogged
 def data():
-    data = {"name": get_jwt_identity(), "pronouns": str(flaskBcrypt.generate_password_hash("24"))}
+    data = {"name": "Joe", "pronouns": "He/Him"}
 
     return jsonify(data)
 
@@ -42,47 +41,43 @@ def authentication() -> "html":
         result = True
 
         if (result):
-            accessToken = create_access_token(identity=loginForm.userLoginEmail.data)
-            print(accessToken)
+            print("result passed")
+            tokenHash = serializer.dumps(loginForm.userLoginEmail.data, salt="email-request")
+            sendConfirmation(tokenHash, loginForm.userLoginEmail.data)
 
-            sendConfirmation(accessToken, loginForm.userLoginEmail.data)
             flash("Check your Email " + str(loginForm.userLoginEmail.data).split("@")[0] + "!", "success")
+
             return redirect(url_for("index"))
-    
-    flash("Login unsuccessful", "fail")
-    print("Login Fail!")
+        
+    flash(loginForm.errors, "fail")
 
     return redirect(url_for("index"))
 
 @app.route("/verify/<token>")
 def verify(token):
     try:
-        confirmSerial = URLSafeTimedSerializer(app.config["SECRET_KEY"])
-        userEmail = confirmSerial.loads(token, salt="saltsaltsalt", max_age=600)
-
-    except:
-        flash("Invalid Confirmation Link!", "fail")
-
-        return redirect(url_for("userPortal"))
-
-    with DBCommands() as cursor:
-        cursor.execute("""SELECT verified
-                            FROM userAccounts
-                            WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-        result = cursor.fetchone()
-
-    if (result and result[2]):
-        flash("Account is already confirmed. You may login.", "fail")
+        request = serializer.loads(token, salt="email-request", max_age=600)
+        flash("Welcome!", "success")
+    except SignatureExpired:
+        flash("Link expired! Try again.", "fail")
 
         return redirect(url_for("index"))
-    
+    except BadTimeSignature:
+        flash("Invalid link! Try again.", "fail")
+
+        return redirect(url_for("index"))
     else:
-        with DBCommands() as cursor:
-            cursor.execute("""UPDATE userAccounts
-                                SET verified=True
-                                WHERE email=%s""", (str(userEmail).lower(),)) #Extra ',' at end to tell python to unpack tuple.
-        flash("Account verified!", "success")
-            
+        session.permanent = False
+        session["logged_in"] = True
+
+        return redirect(url_for("index"))
+
+@app.route("/logout")
+@isLogged
+def logout():
+    session.pop("logged_in")
+    flash("You are now logged out", "success")
+    
     return redirect(url_for("index"))
 
 @app.errorhandler(DBErrors)
