@@ -18,7 +18,7 @@ def index(path, title: str = "OSRS Charting App") -> "html":
     if (path != ""):
         return redirect(url_for("index"))
 
-    return render_template("index.html", the_title = title, loginForm = LoginForm())
+    return render_template("main/index.html", the_title = title, loginForm = LoginForm())
 
 @app.route('/data', methods=["GET", "POST"])
 @isLogged
@@ -72,7 +72,7 @@ def verify(token):
 
         return redirect(url_for("index"))
 
-@app.route("/logout")
+@app.route("/logout", methods=["GET", "POST"])
 @isLogged
 def logout():
     session.pop("logged_in")
