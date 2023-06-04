@@ -11,12 +11,6 @@
     {% endif %}
 {% endwith %}
 
-<div id="navbar">
-    <span>Something</span>
-    <span>Something</span>
-    <span>Something</span>
-</div>
-
 <div class="landing-welcome">    
     <h1>Welcome!</h1><br>
     <span id="data-placeholder"></span>
@@ -40,6 +34,6 @@
 </div>
 
 <script src="{{url_for('static', filename='bundle.js')}}"></script>
-<script src="{{url_for('static', filename='main/js/main.js')}}"></script>
+<script src="{{url_for('static', filename='script.js')}}"></script>
 
 {% endblock %}

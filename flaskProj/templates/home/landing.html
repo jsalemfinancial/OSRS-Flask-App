@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block body %}
+
+{% with alerts = get_flashed_messages(with_categories=true) %}
+    {% if alerts %}
+        {% for category, alert in alerts%}
+            <div class="alert-{{ category }}">
+                {{ alert }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="landing-welcome">
+    <h1>Welcome!</h1><br>
+    <p>From: {{the_client_address}}</p><br>
+    <p>To: {{the_server_address}}</p><br>
+    <p>Host: {{the_host}}</p>
+
+    <button class="login-register-button"><a href="{{ url_for('userPortal') }}">Login/Register</a></button>
+</div>
+
+{% endblock %}
