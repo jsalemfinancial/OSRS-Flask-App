@@ -20,7 +20,7 @@ def isLogged(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
         if "logged_in" not in session:
-            return jsonify({"response": "Please login!"})
+            return jsonify({"notLogged": "Please login!"})
 
         return function(*args, **kwargs)
     

@@ -1,13 +1,10 @@
 import React from 'react';
 
-class FormButton extends React.Component
+const FormButton = ({name, onClick}) =>
 {
-  render()
-  {
-    return (
-      <button onClick={this.props.onClick}>{this.props.name}</button>
-    );
-  }
+  return (
+    <button onClick={onClick}>{name}</button>
+  );
 }
 
-export default FormButton
+export default FormButton;

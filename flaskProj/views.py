@@ -1,4 +1,5 @@
 from itsdangerous import SignatureExpired, BadTimeSignature
+from pathlib import Path;
 
 from flask import Response, request, render_template, redirect, url_for, flash, jsonify
 
@@ -26,6 +27,15 @@ def data():
     data = {"name": "Joe", "pronouns": "He/Him"}
 
     return jsonify(data)
+
+@app.route('/popular', methods=["GET", "POST"])
+# @isLogged
+def popular():
+    cache = {"cachedFiles": []}
+
+    for file in Path("./flaskProj/cache/").resolve().iterdir():
+        cache["cachedFiles"].append(file.read_text())
+    return jsonify(cache)
 
 @app.route("/authentication", methods=["GET", "POST"])
 def authentication() -> "html":
