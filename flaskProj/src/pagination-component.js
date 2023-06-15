@@ -1,33 +1,29 @@
 import React from 'react';
 
-const Population = ({name, endpoint}) => {
-    const [elements, setElements] = React.useState("");
+const Population = ({name, endpoint, cacheReqs}) => {
+    const [elements, setElements] = React.useState([]);
     const [mappedElements, setMappedElements] = React.useState([]);
     const [exception, setError] = React.useState(null);
 
-    React.useEffect(() => 
-    {
-        const fetcher = async () => 
+    async function fetchAndSet(cachedReq, moniker) {
+        try 
         {
-            try 
-            {
-                const response = await fetch(endpoint);
-                const data = await response.json();
-                setElements(Object.values(data).join(""));
-            }
-            catch(err) 
-            {
-                setError(err);
-            };
-        };
+            const response = await fetch(endpoint + "/" + cachedReq + ".html");
+            const data = await response.json();
+            setElements((currentCache) => [...currentCache, data]);
 
-        fetcher();
-    }, []);
+            return (<object key={moniker + "-" + index.toString()} data={item}/>);
+        }
+        catch(err) 
+        {
+            setError(err);
+        };
+    };
     
     React.useEffect(() => {
-        const mapElements = elements.split(',').map((htmlString, index) =>
+        const mapElements = elements.map((item, moniker, index) =>
         (
-            <div key={"Chart-" + index.toString()} dangerouslySetInnerHTML={{__html: htmlString}}/>
+            <object key={moniker + "-" + index.toString()} data={item}/>
         ));
 
         setMappedElements(mapElements);

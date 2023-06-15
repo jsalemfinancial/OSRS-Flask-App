@@ -3,13 +3,13 @@ from pathlib import Path;
 
 from flask import Response, request, render_template, redirect, url_for, flash, jsonify
 
-from flaskProj import app, session, serializer
+from flaskProj import app, session, serializer, charts
 from flaskProj.loginUtils import LoginForm, sendConfirmation, isLogged
 from flaskProj.dbUtils import DBCommands, DBErrors, ValidErrors
 
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
-@app.route('/<path:path>')
+# @app.route('/<path:path>')
 def index(path, title: str = "OSRS Charting App") -> "html":
     response = Response("index_page")
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -36,6 +36,11 @@ def popular():
     for file in Path("./flaskProj/cache/").resolve().iterdir():
         cache["cachedFiles"].append(file.read_text())
     return jsonify(cache)
+
+@charts.route('/active/<chart_id>', methods=["GET", "POST"])
+# @isLogged
+def active(chart_id: str):
+    return render_template(chart_id)
 
 @app.route("/authentication", methods=["GET", "POST"])
 def authentication() -> "html":
@@ -99,4 +104,6 @@ def validErrors(error):
     flash(str(error), "fail")
 
     return redirect(url_for("index"))
+
+app.register_blueprint(charts)
 
