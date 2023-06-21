@@ -8,8 +8,6 @@ body {
 
     display: flex;
     flex-direction: column;
-
-    overflow: hidden;
 }
 
 h1 {
@@ -95,8 +93,6 @@ img {
 
     align-items: center;
     justify-content: center;
-
-    overflow: scroll;
 }
 
 #navbar {

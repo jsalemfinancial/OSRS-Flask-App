@@ -1,0 +1,22 @@
+@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+
+@mixin make-container($padding-x: $container-padding-x, $background-col: red) {
+  width: 100%;
+  padding-right: $padding-x;
+  padding-left: $padding-x;
+  margin-right: auto;
+  margin-left: auto;
+  background-color: $background-col;
+}
+
+.joe-container1 {
+  @include make-container(auto, blue)
+}
+
+.joe-container2 {
+  @include make-container(auto, yellow)
+}
+
+.joe-container3 {
+  @include make-container()
+}
