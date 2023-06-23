@@ -1,35 +1,21 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import TestData from './form-button-component';
-import Population from './pagination-component';
 import { Tooltip, Toast, Popover } from 'bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "../src/custom.scss"
 
-const formSubmitRoot = document.getElementById("data-placeholder");
-const formSubmitComponent = createRoot(formSubmitRoot);
+const root = document.getElementById("react-root");
+const rootComponent = createRoot(root);
 
 class App extends React.Component {
     render() {
         return (
-            <>
-                <div id="main-components-container">
+            <div className="container-fluid bg-primary m-0 p-0">
+                <div className="container-fluid bg-secondary">
                     <TestData name={"Show Data"} endpoint={"/data"}/>
-                    <br/>
-                    {/* <Population name={"Paginated Data"} endpoint={"/popular"}/>
-                    <br/>                 */}
                 </div>
 
-                <div style=
-                        {{
-                            position: "relative",
-                            width: 100 + "%",
-                            height: 50 + "vh",
-                            display: "block",
-                            backgroundColor: "beige",
-                            display: "flex",
-                            flexDirection: "row",
-                            overflow: "scroll"
-                        }}>
+                <div className="container center-block">
                     <object
                         data="/active/p1.html">
                     </object>
@@ -54,9 +40,9 @@ class App extends React.Component {
                         data="/active/p6.html">
                     </object>
                 </div>
-            </>
+            </div>
         );
     }
 }
 
-formSubmitComponent.render(<App/>);
+rootComponent.render(<App/>);
