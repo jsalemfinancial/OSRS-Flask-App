@@ -3,7 +3,7 @@ import React from 'react';
 const FormButton = ({name, onClick}) =>
 {
   return (
-    <button onClick={onClick}>{name}</button>
+    <button className="btn btn-warning" onClick={onClick}>{name}</button>
   );
 }
 
