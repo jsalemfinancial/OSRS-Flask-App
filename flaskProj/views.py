@@ -9,7 +9,7 @@ from flaskProj.dbUtils import DBCommands, DBErrors, ValidErrors
 
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
-# @app.route('/<path:path>')
+@app.route('/<path:path>')
 def index(path, title: str = "OSRS Charting App") -> "html":
     response = Response("index_page")
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
